@@ -283,6 +283,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: BigBoss
       objectReference: {fileID: 0}
+    - target: {fileID: 3511164581683590830, guid: 1478a30cd1946b8479493ca4de2c16ef, type: 3}
+      propertyPath: m_Sprite
+      value: 
+      objectReference: {fileID: 21300000, guid: 4ea1dd9b26e91af489eb54c44eb84f45, type: 3}
     - target: {fileID: 4571069950161713333, guid: 1478a30cd1946b8479493ca4de2c16ef, type: 3}
       propertyPath: m_LocalPosition.x
       value: 2.008644

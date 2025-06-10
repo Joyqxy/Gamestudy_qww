@@ -9,12 +9,15 @@ public class Item : MonoBehaviour
     // 定义不同类型的元素
     public enum ItemType
     {
-        Red,
-        Green,
-        Blue,
-        Yellow,
-        Purple,
-        // 后续可以根据你的策划案添加更多类型, 例如: 灯笼, 粽子
+        //Red,
+        //Green,
+        //Blue,
+        //Yellow,
+        //Purple,
+        Lantern,      // 灯笼
+        Dumpling,     // 粽子
+        Firecracker,  // 鞭炮
+        Fan           // 扇子
     }
 
     public ItemType type; // 当前元素的类型
@@ -36,51 +39,71 @@ public class Item : MonoBehaviour
         SetVisuals(); // 初始化时设置视觉表现
     }
 
-    // 根据类型设置视觉表现 (颜色或Sprite)
+    // 根据类型设置视觉表现（Sprite优先，找不到则用颜色）
     public void SetVisuals()
     {
         if (spriteRenderer == null)
         {
             spriteRenderer = GetComponent<SpriteRenderer>();
-            if (spriteRenderer == null) // 如果还是找不到，就报错
+            if (spriteRenderer == null)
             {
                 Debug.LogError("Item Prefab 上缺少 SpriteRenderer 组件!");
                 return;
             }
         }
 
-        // 示例: 根据类型设置颜色。
-        // 未来你可以扩展这个方法，根据 ItemType 来加载不同的 Sprite
-        switch (type)
+        // 尝试从 Resources/Sprites 中加载与类型同名的Sprite
+        Sprite loadedSprite = Resources.Load<Sprite>("Sprites/" + type.ToString());
+
+        if (loadedSprite != null)
         {
-            case ItemType.Red:
-                spriteRenderer.color = Color.red;
-                break;
-            case ItemType.Green:
-                spriteRenderer.color = Color.green;
-                break;
-            case ItemType.Blue:
-                spriteRenderer.color = Color.blue;
-                break;
-            case ItemType.Yellow:
-                spriteRenderer.color = Color.yellow;
-                break;
-            case ItemType.Purple:
-                spriteRenderer.color = new Color(0.5f, 0f, 0.5f); // 紫色
-                break;
-            default:
-                spriteRenderer.color = Color.grey; // 默认灰色
-                break;
+            spriteRenderer.sprite = loadedSprite;
+            spriteRenderer.color = Color.white; // 确保Sprite显示真实颜色
         }
-        // 如果你有不同类型的Sprite，可以在这里加载：
-        // spriteRenderer.sprite = Resources.Load<Sprite>("Sprites/" + type.ToString());
-        // (需要确保你的Sprite图片放在 Assets/Resources/Sprites/ 目录下，并且命名与ItemType枚举一致)
+        else
+        {
+            Debug.LogWarning("找不到对应的贴图资源：Sprites/" + type.ToString() + "，使用颜色代替");
+
+            // 如果贴图找不到，用颜色区分
+            switch (type)
+            {
+                //case ItemType.Red:
+                //    spriteRenderer.color = Color.red;
+                //    break;
+                //case ItemType.Green:
+                //    spriteRenderer.color = Color.green;
+                //    break;
+                //case ItemType.Blue:
+                //    spriteRenderer.color = Color.blue;
+                //    break;
+                //case ItemType.Yellow:
+                //    spriteRenderer.color = Color.yellow;
+                //    break;
+                //case ItemType.Purple:
+                //    spriteRenderer.color = new Color(0.5f, 0f, 0.5f); // 紫色
+                    //break;
+                case ItemType.Lantern:
+                    spriteRenderer.color = new Color(1f, 0.5f, 0f); // 橙色
+                    break;
+                case ItemType.Dumpling:
+                    spriteRenderer.color = new Color(0.8f, 1f, 0.8f); // 淡绿色
+                    break;
+                case ItemType.Firecracker:
+                    spriteRenderer.color = new Color(0.7f, 0f, 0f); // 暗红
+                    break;
+                case ItemType.Fan:
+                    spriteRenderer.color = new Color(0.8f, 0.8f, 1f); // 淡蓝
+                    break;
+                default:
+                    spriteRenderer.color = Color.grey;
+                    break;
+            }
+        }
     }
 
     // 当鼠标点击此元素时调用
     void OnMouseDown()
     {
-        // 增加棋盘繁忙状态检查
         if (boardManager != null && !boardManager.IsBoardBusy())
         {
             boardManager.SelectItem(this);
