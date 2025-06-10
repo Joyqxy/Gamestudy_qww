@@ -26,23 +26,24 @@ public class BossProjectile : MonoBehaviour
     }
 
     void OnTriggerEnter2D(Collider2D other)
+{
+    if (other.CompareTag("PlayerCharacter_Boss"))
     {
-        // 检查是否碰撞到玩家 (假设玩家有 "PlayerCharacter_Boss" 标签)
-        if (other.CompareTag("PlayerCharacter_Boss"))
+        Debug.Log("Boss projectile hit the player!");
+        PlayerController_BossBattle player = other.GetComponent<PlayerController_BossBattle>();
+        if (player != null)
         {
-            Debug.Log("Boss的子弹击中玩家!");
-            // 在这里获取玩家的脚本并调用其受伤方法
-            // PlayerController_BossBattle player = other.GetComponent<PlayerController_BossBattle>();
-            // if (player != null)
-            // {
-            //     player.TakeDamage(damage); // 假设玩家有TakeDamage方法
-            // }
-            Destroy(gameObject); // 销毁子弹
+            // 假设Boss子弹的伤害值是固定的，或者从Boss那里获取
+            int damageToDeal = 10; // 示例伤害值
+            player.TakeDamage(damageToDeal);
         }
+        Destroy(gameObject); 
+    }
+}
         // 可以添加其他碰撞逻辑，比如碰到场景边界销毁等
         // else if (!other.CompareTag("Enemy_BossBattle") && !other.CompareTag("EnemyProjectile_BossBattle"))
         // {
         //     Destroy(gameObject);
         // }
-    }
 }
+

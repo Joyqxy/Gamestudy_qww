@@ -1,81 +1,229 @@
 using UnityEngine;
-using System.IO; // 用于文件操作
+using System.IO;
+using UnityEngine.SceneManagement;
 
-// 这个类用于定义要保存到文件的数据结构
-[System.Serializable] // 确保这个类可以被JsonUtility序列化
+// Public enum to define the different stages of the game's progression.
+public enum GameProgressionState
+{
+    Start,                  // The very beginning of the game
+    SpringFestival_Complete,  // Player has defeated the Spring Festival boss
+    DuanwuFestival_Complete, // Player has defeated the Duanwu Festival boss
+    ZhongqiuFestival_Complete // Player has defeated the Zhongqiu Festival boss
+}
+
+[System.Serializable]
 public class SaveData
 {
+    // All data to be saved to a file
     public int bulletCount;
-    // 未来可以添加更多需要保存的数据，比如玩家血量、最高分、解锁的节日等
-    // public int playerHealth;
-    // public string lastScene;
+    public int playerHealth;
+    public int maxPlayerHealth;
+    public int currentSpecialItemCount;
+    public int maxSpecialItemCount;
+    public bool isSpeedBoostActive;
+    public bool isAttackBoostActive;
+    public bool isFireRateBoostActive;
+    public GameProgressionState currentProgression; // Game progression state
 }
 
 public class PlayerDataManager : MonoBehaviour
 {
-    public static PlayerDataManager Instance { get; private set; } // 单例模式
+    public static PlayerDataManager Instance { get; private set; }
 
-    public int currentBulletCount = 0; // 运行时在内存中的子弹数量
+    [Header("Game Progression")]
+    public GameProgressionState currentProgressionState = GameProgressionState.Start;
 
-    private string saveFilePath; // 存档文件的完整路径
+    [Header("Core Combat Stats")]
+    public int currentBulletCount = 0;
+    public int currentPlayerHealth = 100;
+    public int maxPlayerHealth = 100;
+
+    [Header("Special Items")]
+    public int currentSpecialItemCount = 0;
+    public int maxSpecialItemCount = 3;
+
+    [Header("Active Buffs")]
+    public bool isSpeedBoostActive = false;
+    public bool isAttackBoostActive = false;
+    public bool isFireRateBoostActive = false;
+
+    private string saveFilePath;
+    public static event System.Action OnPlayerDataUpdated;
 
     void Awake()
     {
-        // 单例模式实现
         if (Instance == null)
         {
             Instance = this;
-            DontDestroyOnLoad(gameObject); // 关键：让这个对象在切换场景时不被销毁
-            saveFilePath = Application.persistentDataPath + "/gameSave.json"; // 定义存档文件名和路径
-            LoadDataFromFile(); // 游戏启动时（或者这个对象第一次创建时）尝试加载数据
+            DontDestroyOnLoad(gameObject);
+            saveFilePath = Application.persistentDataPath + "/gameSave_v2.json";
+            LoadDataFromFile();
         }
         else if (Instance != this)
         {
-            Destroy(gameObject); // 如果已存在实例，销毁新的，防止重复
+            Destroy(gameObject);
         }
     }
 
-    // 增加子弹
+    void Update()
+    {
+        if (Input.GetKeyDown(KeyCode.Tab))
+        {
+            if (StatusDisplayController.Instance != null)
+            {
+                StatusDisplayController.Instance.ToggleStatusPanel();
+            }
+        }
+    }
+
+    // --- Progression Management ---
+    public void SetProgressionState(GameProgressionState newState)
+    {
+        if (newState > currentProgressionState)
+        {
+            currentProgressionState = newState;
+            Debug.Log($"[PlayerDataManager] Progression state advanced to: {newState}");
+            OnPlayerDataUpdated?.Invoke();
+        }
+    }
+
+    // --- Bullet Management ---
     public void AddBullets(int amount)
     {
+        if (amount <= 0) return;
         currentBulletCount += amount;
-        Debug.Log($"子弹增加: {amount}. 当前子弹数 (内存): {currentBulletCount}");
-        // 在这里可以触发一个事件，通知UI更新子弹显示
-        // UIManager.Instance.UpdateBulletDisplay(currentBulletCount);
+        OnPlayerDataUpdated?.Invoke();
     }
 
-    // （可选）消耗子弹的方法
     public void SpendBullets(int amount)
     {
+        if (amount <= 0) return;
         currentBulletCount -= amount;
-        if (currentBulletCount < 0)
-        {
-            currentBulletCount = 0;
-        }
-        Debug.Log($"消耗子弹: {amount}. 当前子弹数 (内存): {currentBulletCount}");
+        if (currentBulletCount < 0) currentBulletCount = 0;
+        OnPlayerDataUpdated?.Invoke();
     }
 
-    // 保存数据到本地文件
+    public bool HasEnoughBullets(int amountNeeded)
+    {
+        return currentBulletCount >= amountNeeded;
+    }
+
+    // --- Health Management ---
+    public void TakeDamage(int damageAmount)
+    {
+        if (damageAmount <= 0) return;
+        currentPlayerHealth -= damageAmount;
+        if (currentPlayerHealth <= 0)
+        {
+            currentPlayerHealth = 0;
+            HandlePlayerDeath();
+        }
+        OnPlayerDataUpdated?.Invoke();
+    }
+
+    public void Heal(int healAmount)
+    {
+        if (healAmount <= 0 || currentPlayerHealth >= maxPlayerHealth) return;
+        currentPlayerHealth += healAmount;
+        if (currentPlayerHealth > maxPlayerHealth) currentPlayerHealth = maxPlayerHealth;
+        OnPlayerDataUpdated?.Invoke();
+    }
+
+    public void SetMaxHealth(int newMaxHealth, bool healToFull = false)
+    {
+        maxPlayerHealth = Mathf.Max(1, newMaxHealth);
+        if (healToFull)
+        {
+            currentPlayerHealth = maxPlayerHealth;
+        }
+        else
+        {
+            currentPlayerHealth = Mathf.Min(currentPlayerHealth, maxPlayerHealth);
+        }
+        OnPlayerDataUpdated?.Invoke();
+    }
+
+    private void HandlePlayerDeath()
+    {
+        Debug.Log("Player is dead!");
+        // TODO: Implement game over logic here.
+        OnPlayerDataUpdated?.Invoke();
+    }
+
+    // --- Special Item Management ---
+    public void AddSpecialItem(int amount = 1)
+    {
+        if (amount <= 0) return;
+        currentSpecialItemCount += amount;
+        if (currentSpecialItemCount > maxSpecialItemCount) currentSpecialItemCount = maxSpecialItemCount;
+        OnPlayerDataUpdated?.Invoke();
+    }
+
+    public bool UseSpecialItem()
+    {
+        if (currentSpecialItemCount > 0)
+        {
+            currentSpecialItemCount--;
+            OnPlayerDataUpdated?.Invoke();
+            return true;
+        }
+        return false;
+    }
+
+    public void SetMaxSpecialItems(int newMax)
+    {
+        maxSpecialItemCount = Mathf.Max(0, newMax);
+        currentSpecialItemCount = Mathf.Min(currentSpecialItemCount, maxSpecialItemCount);
+        OnPlayerDataUpdated?.Invoke();
+    }
+
+    // --- Skill/Buff Management ---
+    public void SetSkillActive(string skillName, bool isActive)
+    {
+        bool changed = false;
+        switch (skillName.ToLower())
+        {
+            case "speedboost":
+                if (isSpeedBoostActive != isActive) { isSpeedBoostActive = isActive; changed = true; }
+                break;
+            case "attackboost":
+                if (isAttackBoostActive != isActive) { isAttackBoostActive = isActive; changed = true; }
+                break;
+            case "firerateboost":
+                if (isFireRateBoostActive != isActive) { isFireRateBoostActive = isActive; changed = true; }
+                break;
+            default:
+                return;
+        }
+        if (changed) OnPlayerDataUpdated?.Invoke();
+    }
+
+    // --- Data Persistence ---
     public void SaveDataToFile()
     {
         SaveData data = new SaveData();
         data.bulletCount = currentBulletCount;
-        // data.playerHealth = someOtherVariable; // 如果有其他数据
+        data.playerHealth = currentPlayerHealth;
+        data.maxPlayerHealth = maxPlayerHealth;
+        data.currentSpecialItemCount = currentSpecialItemCount;
+        data.maxSpecialItemCount = maxSpecialItemCount;
+        data.isSpeedBoostActive = isSpeedBoostActive;
+        data.isAttackBoostActive = isAttackBoostActive;
+        data.isFireRateBoostActive = isFireRateBoostActive;
+        data.currentProgression = currentProgressionState;
 
-        string json = JsonUtility.ToJson(data, true); // true表示格式化JSON，易于阅读
-
+        string json = JsonUtility.ToJson(data, true);
         try
         {
             File.WriteAllText(saveFilePath, json);
-            Debug.Log($"游戏数据已成功保存到: {saveFilePath}");
+            Debug.Log($"[PlayerDataManager] Game data saved to: {saveFilePath}");
         }
         catch (System.Exception e)
         {
-            Debug.LogError($"保存数据失败: {e.Message}");
+            Debug.LogError($"[PlayerDataManager] Failed to save data: {e.Message}");
         }
     }
 
-    // 从本地文件加载数据
     public void LoadDataFromFile()
     {
         if (File.Exists(saveFilePath))
@@ -86,32 +234,52 @@ public class PlayerDataManager : MonoBehaviour
                 SaveData loadedData = JsonUtility.FromJson<SaveData>(json);
 
                 currentBulletCount = loadedData.bulletCount;
-                // this.playerHealth = loadedData.playerHealth; // 如果有其他数据
+                maxPlayerHealth = loadedData.maxPlayerHealth;
+                currentPlayerHealth = Mathf.Min(loadedData.playerHealth, maxPlayerHealth);
+                maxSpecialItemCount = loadedData.maxSpecialItemCount;
+                currentSpecialItemCount = Mathf.Min(loadedData.currentSpecialItemCount, maxSpecialItemCount);
+                isSpeedBoostActive = loadedData.isSpeedBoostActive;
+                isAttackBoostActive = loadedData.isAttackBoostActive;
+                isFireRateBoostActive = loadedData.isFireRateBoostActive;
+                currentProgressionState = loadedData.currentProgression;
 
-                Debug.Log($"游戏数据已从 {saveFilePath} 加载. 当前子弹数: {currentBulletCount}");
+                Debug.Log($"[PlayerDataManager] Game data loaded. Progression state is: {currentProgressionState}");
             }
             catch (System.Exception e)
             {
-                Debug.LogError($"加载数据失败: {e.Message}. 将使用默认值。");
-                InitializeDefaultData(); // 加载失败则使用默认值
+                Debug.LogError($"[PlayerDataManager] Failed to load data: {e.Message}. Using default values.");
+                InitializeDefaultData();
             }
         }
         else
         {
-            Debug.Log("存档文件不存在，使用默认数据初始化。");
-            InitializeDefaultData(); // 没有存档文件也使用默认值
+            Debug.Log("[PlayerDataManager] Save file not found. Using default values.");
+            InitializeDefaultData();
         }
+        OnPlayerDataUpdated?.Invoke();
     }
 
-    // 初始化默认数据（比如新游戏开始时）
     public void InitializeDefaultData()
     {
-        currentBulletCount = 0; // 新游戏时子弹为0
-        // playerHealth = 100;
-        Debug.Log("玩家数据已初始化为默认值。");
+        currentBulletCount = 10;
+        maxPlayerHealth = 100;
+        currentPlayerHealth = maxPlayerHealth;
+        maxSpecialItemCount = 3;
+        currentSpecialItemCount = 0;
+        isSpeedBoostActive = false;
+        isAttackBoostActive = false;
+        isFireRateBoostActive = false;
+        currentProgressionState = GameProgressionState.Start;
+        Debug.Log("[PlayerDataManager] Player data initialized to defaults.");
     }
 
-    // （可选）在游戏退出时自动保存
+    public void StartNewGameReset()
+    {
+        InitializeDefaultData();
+        SaveDataToFile();
+        OnPlayerDataUpdated?.Invoke();
+    }
+
     void OnApplicationQuit()
     {
         SaveDataToFile();
