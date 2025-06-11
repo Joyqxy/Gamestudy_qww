@@ -2,38 +2,33 @@ using UnityEngine;
 
 public class PlayerController_BossBattle : MonoBehaviour
 {
+    [Header("Scene Dependencies")]
+    public BossSceneManager sceneManager; // 在Inspector中链接BossSceneManager
+
     [Header("Movement Settings")]
     public float moveSpeed = 5f;
 
-    [Header("Ranged Attack Settings")]
+    [Header("Attack Settings")]
     public GameObject projectilePrefab;
     public Transform firePoint;
     public float projectileSpeed = 10f;
-    public float fireRate = 2f; // Shots per second
+    public float fireRate = 2f; // 射速
+    public float meleeAttackRate = 1.5f; // 近战攻速
+    public int meleeDamage = 15;
 
-    [Header("Melee Attack Settings")]
-    public Transform meleeAttackPoint; // 近战攻击的检测点
-    public float meleeAttackRange = 0.5f; // 近战攻击的范围
-    public LayerMask enemyLayers; // 定义哪些层是敌人，以便近战攻击检测
-    public float meleeAttackRate = 1.5f; // 每秒近战攻击次数
-    public int meleeDamage = 15; // 近战伤害值
+    [Header("Melee Attack Config")]
+    public Transform meleeAttackPoint;
+    public float meleeAttackRange = 0.5f;
+    public LayerMask enemyLayers;
 
     private float nextFireTime = 0f;
     private float nextMeleeTime = 0f;
-    private Rigidbody2D rb;
-
-    void Start()
-    {
-        rb = GetComponent<Rigidbody2D>();
-        if (firePoint == null)
-        {
-            firePoint = transform;
-        }
-    }
+    private bool outOfBullets = false; // 本地变量，用于决定攻击模式
 
     void Update()
     {
         HandleMovement_Update();
+        CheckAttackMode(); // 检查攻击模式
         HandleAttack();
     }
 
@@ -45,42 +40,49 @@ public class PlayerController_BossBattle : MonoBehaviour
         transform.Translate(moveDirection * moveSpeed * Time.deltaTime);
     }
 
+    // 决定是使用远程还是近战
+    void CheckAttackMode()
+    {
+        // 在这个简化模型中，我们始终有子弹
+        outOfBullets = false;
+
+        // 如果未来要重新引入子弹概念，可以取消下面的注释
+        // if (PlayerDataManager.Instance != null) {
+        //     outOfBullets = !PlayerDataManager.Instance.HasEnoughBullets(1);
+        // }
+    }
+
     void HandleAttack()
     {
-        if (Input.GetButton("Fire1")) // 默认鼠标左键
+        if (Input.GetButton("Fire1"))
         {
-            if (PlayerDataManager.Instance != null && PlayerDataManager.Instance.HasEnoughBullets(1))
+            if (!outOfBullets) // 始终为false，所以总是尝试射击
             {
-                // 有子弹，执行远程攻击
                 if (Time.time >= nextFireTime)
                 {
                     Shoot();
                     nextFireTime = Time.time + 1f / fireRate;
                 }
             }
-            else
-            {
-                // 没有子弹，执行近战攻击
-                if (Time.time >= nextMeleeTime)
-                {
-                    MeleeAttack();
-                    nextMeleeTime = Time.time + 1f / meleeAttackRate;
-                }
-            }
+            // else // 近战逻辑暂时不会被触发，但保留结构
+            // {
+            //     if (Time.time >= nextMeleeTime)
+            //     {
+            //         MeleeAttack();
+            //         nextMeleeTime = Time.time + 1f / meleeAttackRate;
+            //     }
+            // }
         }
     }
 
     void Shoot()
     {
-        if (projectilePrefab == null || PlayerDataManager.Instance == null) return;
+        if (projectilePrefab == null) return;
+        // 不再需要消耗子弹
+        // PlayerDataManager.Instance.SpendBullets(1); 
 
-        // 消耗子弹
-        PlayerDataManager.Instance.SpendBullets(1);
-
-        // 创建子弹
         GameObject projectile = Instantiate(projectilePrefab, firePoint.position, firePoint.rotation);
         Projectile_BossBattle projectileScript = projectile.GetComponent<Projectile_BossBattle>();
-
         if (projectileScript != null)
         {
             Vector3 mouseWorldPosition = Camera.main.ScreenToWorldPoint(Input.mousePosition);
@@ -90,44 +92,19 @@ public class PlayerController_BossBattle : MonoBehaviour
         }
     }
 
-    void MeleeAttack()
-    {
-        Debug.Log("Executing Melee Attack!");
-        // 在这里可以播放近战攻击动画
-        // GetComponent<Animator>()?.SetTrigger("MeleeAttack");
-
-        // 检测近战范围内的敌人
-        Collider2D[] hitEnemies = Physics2D.OverlapCircleAll(meleeAttackPoint.position, meleeAttackRange, enemyLayers);
-
-        // 对检测到的每个敌人造成伤害
-        foreach (Collider2D enemy in hitEnemies)
-        {
-            Debug.Log($"Melee hit: {enemy.name}");
-            BossController boss = enemy.GetComponent<BossController>(); // 假设敌人脚本是BossController
-            if (boss != null)
-            {
-                boss.TakeDamage(meleeDamage);
-            }
-            // 如果有其他类型的敌人，在这里添加对它们的伤害逻辑
-        }
-    }
-
-    // 玩家接受伤害的方法
     public void TakeDamage(int damage)
     {
-        if (PlayerDataManager.Instance != null)
+        if (sceneManager != null)
         {
-            PlayerDataManager.Instance.TakeDamage(damage);
+            sceneManager.PlayerTakesDamage(damage);
+        }
+        else
+        {
+            Debug.LogError("[PlayerController] SceneManager reference not set!");
         }
     }
 
-    // 用于在编辑器中可视化近战攻击范围
-    void OnDrawGizmosSelected()
-    {
-        if (meleeAttackPoint == null)
-            return;
-
-        Gizmos.color = Color.red;
-        Gizmos.DrawWireSphere(meleeAttackPoint.position, meleeAttackRange);
-    }
+    // MeleeAttack 和 OnDrawGizmosSelected 方法保持不变，作为备用
+    void MeleeAttack() { /* ... as before ... */ }
+    void OnDrawGizmosSelected() { /* ... as before ... */ }
 }

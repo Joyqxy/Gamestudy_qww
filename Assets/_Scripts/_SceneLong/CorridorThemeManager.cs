@@ -37,7 +37,7 @@ public class CorridorThemeManager : MonoBehaviour
     }
     
     // You can uncomment this section if you need keyboard controls for debugging purposes.
-    /*
+
     void Update()
     {
         if (Input.GetKeyDown(KeyCode.F1)) ApplyThemeBasedOnProgression(GameProgressionState.Start);
@@ -45,7 +45,7 @@ public class CorridorThemeManager : MonoBehaviour
         if (Input.GetKeyDown(KeyCode.F3)) ApplyThemeBasedOnProgression(GameProgressionState.DuanwuFestival_Complete);
         if (Input.GetKeyDown(KeyCode.F4)) ApplyThemeBasedOnProgression(GameProgressionState.ZhongqiuFestival_Complete);
     }
-    */
+
 
     public void ApplyThemeBasedOnProgression(GameProgressionState progressionState)
     {
