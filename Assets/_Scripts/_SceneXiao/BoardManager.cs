@@ -119,6 +119,8 @@ public class BoardManager : MonoBehaviour
         }
     }
 
+
+
     bool AreItemsAdjacent(Item item1, Item item2)
     {
         if (item1 == null || item2 == null) return false;
@@ -347,12 +349,28 @@ public class BoardManager : MonoBehaviour
         return false;
     }
 
-    Item.ItemType GetRandomItemType()
-    {
-        return (Item.ItemType)Random.Range(0, System.Enum.GetValues(typeof(Item.ItemType)).Length);
-    }
+	public Item.ItemType GetRandomItemType()
+	{
+		string sceneName = SceneManager.GetActiveScene().name;
+		if (sceneName == "_SceneXiao_duanwu")
+		{
+			return (Item.ItemType)Random.Range(4, 8); // 端午：4~7
+		}
+		else if (sceneName == "_SceneXiao_zhongqiu")
+		{
+			return (Item.ItemType)Random.Range(8, 12); // 中秋：8~11
+		}
+		else if (sceneName == "_SceneXiao_yuanxiao") // 新增元宵场景
+		{
+			return (Item.ItemType)Random.Range(12, 16); // 元宵：12~15（左闭右开，故上限为16）
+		}
+		else
+		{
+			return (Item.ItemType)Random.Range(0, 4); // 原场景：0~3
+		}
+	}
 
-    IEnumerator CollapseColumns()
+	IEnumerator CollapseColumns()
     {
         List<Coroutine> activeFallingAnimations = new List<Coroutine>();
         for (int x = 0; x < width; x++)
