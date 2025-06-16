@@ -356,7 +356,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   continueButton: {fileID: 1886740152}
   newGameButton: {fileID: 0}
-  gameSceneName: _SceneLong
+  gameSceneName: _SceneLong_Spr
 --- !u!4 &368502504
 Transform:
   m_ObjectHideFlags: 0

@@ -836,11 +836,11 @@ MonoBehaviour:
   itemPrefab: {fileID: 6438364154101354746, guid: 6e65dc89efb360b48a5185f2b78e7b40, type: 3}
   itemSpacing: 1
   scorePerItem: 10
-  targetScore: 1000
+  targetScore: 200
   itemsToConvertForOneBullet: 50
   scoreTextUI: {fileID: 1129712573}
   bulletCountTextUI: {fileID: 130216212}
-  corridorSceneName: _SceneLong
+  corridorSceneName: _SceneLong_Duan
 --- !u!4 &1832052775
 Transform:
   m_ObjectHideFlags: 0

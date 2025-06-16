@@ -658,7 +658,7 @@ MonoBehaviour:
   promptForAction: "\u6309 E \u5F00\u59CB\u4EFB\u52A1"
   isTwoStepInteraction: 1
   triggerSceneChangeOnAction: 1
-  targetSceneName: _SceneXiao
+  targetSceneName: _SceneXiao_zhongqiu
 --- !u!58 &829589991
 CircleCollider2D:
   m_ObjectHideFlags: 0

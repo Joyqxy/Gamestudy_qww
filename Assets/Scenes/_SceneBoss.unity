@@ -512,7 +512,7 @@ MonoBehaviour:
   gameOverPanel: {fileID: 1051303513}
   restartButton: {fileID: 1733467331}
   returnToCorridorButton: {fileID: 1604625274}
-  corridorSceneName: _SceneLong
+  corridorSceneName: _SceneLong_Spr
 --- !u!4 &979582926
 Transform:
   m_ObjectHideFlags: 0
