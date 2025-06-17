@@ -10,6 +10,7 @@ GameObject:
   m_Component:
   - component: {fileID: 2348336496689908696}
   - component: {fileID: 3409658647658857705}
+  - component: {fileID: 4863453564106204558}
   m_Layer: 0
   m_Name: Lantern
   m_TagString: Untagged
@@ -84,3 +85,15 @@ SpriteRenderer:
   m_WasSpriteAssigned: 1
   m_MaskInteraction: 0
   m_SpriteSortPoint: 0
+--- !u!114 &4863453564106204558
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4148824427796780439}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4e78e8cbc256b7b4a9a89fadf1a59bd9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 

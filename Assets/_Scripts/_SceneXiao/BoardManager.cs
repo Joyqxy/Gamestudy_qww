@@ -164,6 +164,12 @@ public class BoardManager : MonoBehaviour
         yield return StartCoroutine(AnimateSwap(item1, item2));
         SwapGridPositions(item1, item2);
 
+        // 添加音效调用（玩家主动操作 → 传true）
+        if (SoundManager.Instance != null)
+        {
+            SoundManager.Instance.PlayEliminationSound(true);
+        }
+
         List<Item> matchedItems = FindAllMatches();
         if (matchedItems.Count > 0)
         {
@@ -172,6 +178,7 @@ public class BoardManager : MonoBehaviour
         }
         else
         {
+            // 无匹配，交换回原位
             yield return StartCoroutine(AnimateSwap(item1, item2));
             SwapGridPositions(item1, item2);
         }
@@ -192,10 +199,23 @@ public class BoardManager : MonoBehaviour
         {
             WinGame();
         }
+        
+        // 新增：这里可以添加额外的连击逻辑（如果需要）
+        // 例如：SoundManager.Instance.UpdateCombo(count);
     }
 
     IEnumerator ProcessMatchesLoop(List<Item> initialMatchedItems)
     {
+        // 标记自动消除开始
+        // 原代码问题行：
+        // if (SoundManager.Instance != null && !initialMatchedItems.IsNullOrEmpty())
+
+        // 修正后：
+        if (SoundManager.Instance != null && initialMatchedItems != null && initialMatchedItems.Count > 0)
+        {
+            SoundManager.Instance.PlayEliminationSound(false);
+        }
+
         List<Item> currentMatches = new List<Item>(initialMatchedItems);
         while (currentMatches.Count > 0)
         {
@@ -209,8 +229,15 @@ public class BoardManager : MonoBehaviour
             if (newCascadeMatches.Count > 0)
             {
                 ProcessClearedItems(newCascadeMatches.Count);
+                // 不需要再次调用PlayEliminationSound，因为在ClearItems中已经调用
             }
             currentMatches = newCascadeMatches;
+        }
+
+        // 标记自动消除结束
+        if (SoundManager.Instance != null)
+        {
+            SoundManager.Instance.MarkAutoMatchesFinished();
         }
     }
 
@@ -317,6 +344,13 @@ public class BoardManager : MonoBehaviour
                 {
                     grid[item.x, item.y] = null;
                 }
+
+                // 添加音效调用（系统自动消除 → 传false）
+                if (SoundManager.Instance != null)
+                {
+                    SoundManager.Instance.PlayEliminationSound(false);
+                }
+
                 Destroy(item.gameObject);
             }
         }
