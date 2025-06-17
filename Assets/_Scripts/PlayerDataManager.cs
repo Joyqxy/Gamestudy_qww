@@ -1,51 +1,30 @@
+
 using UnityEngine;
 using System.IO;
 using UnityEngine.SceneManagement;
 
-// Public enum to define the different stages of the game's progression.
-public enum GameProgressionState
-{
-    Start,                  // The very beginning of the game
-    SpringFestival_Complete,  // Player has defeated the Spring Festival boss
-    DuanwuFestival_Complete, // Player has defeated the Duanwu Festival boss
-    ZhongqiuFestival_Complete // Player has defeated the Zhongqiu Festival boss
-}
-
 [System.Serializable]
 public class SaveData
 {
-    // All data to be saved to a file
-    public int bulletCount;
-    public int playerHealth;
-    public int maxPlayerHealth;
-    public int currentSpecialItemCount;
-    public int maxSpecialItemCount;
-    public bool isSpeedBoostActive;
-    public bool isAttackBoostActive;
-    public bool isFireRateBoostActive;
-    public GameProgressionState currentProgression; // Game progression state
+    public int upgradesAcquired;
+    public string lastSceneName; // CRITICAL: Added field to store the last scene name.
 }
 
 public class PlayerDataManager : MonoBehaviour
 {
     public static PlayerDataManager Instance { get; private set; }
 
-    [Header("Game Progression")]
-    public GameProgressionState currentProgressionState = GameProgressionState.Start;
+    [Header("Player Power Level")]
+    public int upgradesAcquired = 0;
 
-    [Header("Core Combat Stats")]
-    public int currentBulletCount = 0;
-    public int currentPlayerHealth = 100;
-    public int maxPlayerHealth = 100;
+    // This variable will hold the name of the scene to load when continuing.
+    // It is loaded from the save file.
+    [Header("Game State")]
+    public string sceneToLoadOnContinue = "_SceneLong"; // Default start scene
 
-    [Header("Special Items")]
-    public int currentSpecialItemCount = 0;
-    public int maxSpecialItemCount = 3;
-
-    [Header("Active Buffs")]
-    public bool isSpeedBoostActive = false;
-    public bool isAttackBoostActive = false;
-    public bool isFireRateBoostActive = false;
+    public bool HasSpeedUpgrade => upgradesAcquired >= 1;
+    public bool HasDamageUpgrade => upgradesAcquired >= 2;
+    public bool HasFireRateUpgrade => upgradesAcquired >= 3;
 
     private string saveFilePath;
     public static event System.Action OnPlayerDataUpdated;
@@ -56,7 +35,7 @@ public class PlayerDataManager : MonoBehaviour
         {
             Instance = this;
             DontDestroyOnLoad(gameObject);
-            saveFilePath = Application.persistentDataPath + "/gameSave_v2.json";
+            saveFilePath = Application.persistentDataPath + "/gameSave_simplified_v2.json"; // New save file version
             LoadDataFromFile();
         }
         else if (Instance != this)
@@ -76,147 +55,43 @@ public class PlayerDataManager : MonoBehaviour
         }
     }
 
-    // --- Progression Management ---
-    public void SetProgressionState(GameProgressionState newState)
+    public void GrantNextUpgrade()
     {
-        if (newState > currentProgressionState)
+        if (upgradesAcquired < 3)
         {
-            currentProgressionState = newState;
-            Debug.Log($"[PlayerDataManager] Progression state advanced to: {newState}");
+            upgradesAcquired++;
+            Debug.Log($"[PlayerDataManager] Upgrade acquired! Player power level is now: {upgradesAcquired}");
             OnPlayerDataUpdated?.Invoke();
-        }
-    }
-
-    // --- Bullet Management ---
-    public void AddBullets(int amount)
-    {
-        if (amount <= 0) return;
-        currentBulletCount += amount;
-        OnPlayerDataUpdated?.Invoke();
-    }
-
-    public void SpendBullets(int amount)
-    {
-        if (amount <= 0) return;
-        currentBulletCount -= amount;
-        if (currentBulletCount < 0) currentBulletCount = 0;
-        OnPlayerDataUpdated?.Invoke();
-    }
-
-    public bool HasEnoughBullets(int amountNeeded)
-    {
-        return currentBulletCount >= amountNeeded;
-    }
-
-    // --- Health Management ---
-    public void TakeDamage(int damageAmount)
-    {
-        if (damageAmount <= 0) return;
-        currentPlayerHealth -= damageAmount;
-        if (currentPlayerHealth <= 0)
-        {
-            currentPlayerHealth = 0;
-            HandlePlayerDeath();
-        }
-        OnPlayerDataUpdated?.Invoke();
-    }
-
-    public void Heal(int healAmount)
-    {
-        if (healAmount <= 0 || currentPlayerHealth >= maxPlayerHealth) return;
-        currentPlayerHealth += healAmount;
-        if (currentPlayerHealth > maxPlayerHealth) currentPlayerHealth = maxPlayerHealth;
-        OnPlayerDataUpdated?.Invoke();
-    }
-
-    public void SetMaxHealth(int newMaxHealth, bool healToFull = false)
-    {
-        maxPlayerHealth = Mathf.Max(1, newMaxHealth);
-        if (healToFull)
-        {
-            currentPlayerHealth = maxPlayerHealth;
         }
         else
         {
-            currentPlayerHealth = Mathf.Min(currentPlayerHealth, maxPlayerHealth);
+            Debug.Log($"[PlayerDataManager] Max upgrades reached. No new upgrade granted.");
         }
-        OnPlayerDataUpdated?.Invoke();
     }
 
-    private void HandlePlayerDeath()
-    {
-        Debug.Log("Player is dead!");
-        // TODO: Implement game over logic here.
-        OnPlayerDataUpdated?.Invoke();
-    }
-
-    // --- Special Item Management ---
-    public void AddSpecialItem(int amount = 1)
-    {
-        if (amount <= 0) return;
-        currentSpecialItemCount += amount;
-        if (currentSpecialItemCount > maxSpecialItemCount) currentSpecialItemCount = maxSpecialItemCount;
-        OnPlayerDataUpdated?.Invoke();
-    }
-
-    public bool UseSpecialItem()
-    {
-        if (currentSpecialItemCount > 0)
-        {
-            currentSpecialItemCount--;
-            OnPlayerDataUpdated?.Invoke();
-            return true;
-        }
-        return false;
-    }
-
-    public void SetMaxSpecialItems(int newMax)
-    {
-        maxSpecialItemCount = Mathf.Max(0, newMax);
-        currentSpecialItemCount = Mathf.Min(currentSpecialItemCount, maxSpecialItemCount);
-        OnPlayerDataUpdated?.Invoke();
-    }
-
-    // --- Skill/Buff Management ---
-    public void SetSkillActive(string skillName, bool isActive)
-    {
-        bool changed = false;
-        switch (skillName.ToLower())
-        {
-            case "speedboost":
-                if (isSpeedBoostActive != isActive) { isSpeedBoostActive = isActive; changed = true; }
-                break;
-            case "attackboost":
-                if (isAttackBoostActive != isActive) { isAttackBoostActive = isActive; changed = true; }
-                break;
-            case "firerateboost":
-                if (isFireRateBoostActive != isActive) { isFireRateBoostActive = isActive; changed = true; }
-                break;
-            default:
-                return;
-        }
-        if (changed) OnPlayerDataUpdated?.Invoke();
-    }
-
-    // --- Data Persistence ---
     public void SaveDataToFile()
     {
         SaveData data = new SaveData();
-        data.bulletCount = currentBulletCount;
-        data.playerHealth = currentPlayerHealth;
-        data.maxPlayerHealth = maxPlayerHealth;
-        data.currentSpecialItemCount = currentSpecialItemCount;
-        data.maxSpecialItemCount = maxSpecialItemCount;
-        data.isSpeedBoostActive = isSpeedBoostActive;
-        data.isAttackBoostActive = isAttackBoostActive;
-        data.isFireRateBoostActive = isFireRateBoostActive;
-        data.currentProgression = currentProgressionState;
+        data.upgradesAcquired = upgradesAcquired;
+
+        // CRITICAL: Get the current active scene and save its name.
+        // We ensure we don't save utility scenes like the main menu as a load point.
+        string currentScene = SceneManager.GetActiveScene().name;
+        if (currentScene != "MainMenuScene") // Assuming your main menu scene is named "MainMenuScene"
+        {
+            data.lastSceneName = currentScene;
+        }
+        else
+        {
+            // If for some reason we save from the main menu, default to the first gameplay scene.
+            data.lastSceneName = "_SceneLong";
+        }
 
         string json = JsonUtility.ToJson(data, true);
         try
         {
             File.WriteAllText(saveFilePath, json);
-            Debug.Log($"[PlayerDataManager] Game data saved to: {saveFilePath}");
+            Debug.Log($"[PlayerDataManager] Game data saved. Upgrade level: {upgradesAcquired}, Last Scene: {data.lastSceneName}");
         }
         catch (System.Exception e)
         {
@@ -232,18 +107,19 @@ public class PlayerDataManager : MonoBehaviour
             {
                 string json = File.ReadAllText(saveFilePath);
                 SaveData loadedData = JsonUtility.FromJson<SaveData>(json);
+                upgradesAcquired = loadedData.upgradesAcquired;
 
-                currentBulletCount = loadedData.bulletCount;
-                maxPlayerHealth = loadedData.maxPlayerHealth;
-                currentPlayerHealth = Mathf.Min(loadedData.playerHealth, maxPlayerHealth);
-                maxSpecialItemCount = loadedData.maxSpecialItemCount;
-                currentSpecialItemCount = Mathf.Min(loadedData.currentSpecialItemCount, maxSpecialItemCount);
-                isSpeedBoostActive = loadedData.isSpeedBoostActive;
-                isAttackBoostActive = loadedData.isAttackBoostActive;
-                isFireRateBoostActive = loadedData.isFireRateBoostActive;
-                currentProgressionState = loadedData.currentProgression;
+                // CRITICAL: Load the last scene name. If it's empty, default to the first gameplay scene.
+                if (!string.IsNullOrEmpty(loadedData.lastSceneName))
+                {
+                    sceneToLoadOnContinue = loadedData.lastSceneName;
+                }
+                else
+                {
+                    sceneToLoadOnContinue = "_SceneLong"; // Fallback
+                }
 
-                Debug.Log($"[PlayerDataManager] Game data loaded. Progression state is: {currentProgressionState}");
+                Debug.Log($"[PlayerDataManager] Game data loaded. Upgrade level: {upgradesAcquired}, Scene to load on continue: {sceneToLoadOnContinue}");
             }
             catch (System.Exception e)
             {
@@ -261,16 +137,9 @@ public class PlayerDataManager : MonoBehaviour
 
     public void InitializeDefaultData()
     {
-        currentBulletCount = 10;
-        maxPlayerHealth = 100;
-        currentPlayerHealth = maxPlayerHealth;
-        maxSpecialItemCount = 3;
-        currentSpecialItemCount = 0;
-        isSpeedBoostActive = false;
-        isAttackBoostActive = false;
-        isFireRateBoostActive = false;
-        currentProgressionState = GameProgressionState.Start;
-        Debug.Log("[PlayerDataManager] Player data initialized to defaults.");
+        upgradesAcquired = 0;
+        sceneToLoadOnContinue = "_SceneLong"; // A new game always starts at the first corridor scene.
+        Debug.Log("[PlayerDataManager] Player data initialized to defaults. Upgrade level: 0.");
     }
 
     public void StartNewGameReset()

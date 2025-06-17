@@ -1,79 +1,95 @@
-// PlayerStatusUI_BossBattle.cs (带有诊断日志的修正版)
 using UnityEngine;
 using UnityEngine.UI;
-// using TMPro;
 
 public class PlayerStatusUI_BossBattle : MonoBehaviour
 {
-    [Header("UI Element References")]
-    public Image healthBarFill;
+    [Header("Player UI References")]
+    public Image playerHealthBarFill;
     public Text bulletCountText;
-    // public TextMeshProUGUI bulletCountText_TMP;
 
-    void OnEnable()
-    {
-        Debug.Log("[PlayerStatusUI] OnEnable: Subscribing to OnPlayerDataUpdated.");
-        PlayerDataManager.OnPlayerDataUpdated += UpdateUI;
-    }
+    [Header("Boss UI References")]
+    public Image bossHealthBarFill;
+
+    private BaseBossController subscribedBoss = null;
 
     void OnDisable()
     {
-        Debug.Log("[PlayerStatusUI] OnDisable: Unsubscribing from OnPlayerDataUpdated.");
-        PlayerDataManager.OnPlayerDataUpdated -= UpdateUI;
+        if (subscribedBoss != null)
+        {
+            Debug.Log($"[PlayerStatusUI] OnDisable: Unsubscribing from {subscribedBoss.name}'s health updates.");
+            subscribedBoss.OnHealthChanged -= UpdateBossHealthUI;
+        }
     }
 
     void Start()
     {
-        // 检查UI链接是否正确
-        if (healthBarFill == null)
+        if (bossHealthBarFill != null)
         {
-            Debug.LogError("[PlayerStatusUI] ERROR: Health Bar Fill Image is not assigned in the Inspector!");
+            bossHealthBarFill.transform.parent.gameObject.SetActive(false);
         }
-        if (bulletCountText == null)
-        {
-            Debug.LogError("[PlayerStatusUI] ERROR: Bullet Count Text is not assigned in the Inspector!");
-        }
-
-        // 初始更新
-        Debug.Log("[PlayerStatusUI] Start: Performing initial UI update.");
-        UpdateUI();
+        UpdateBulletsInfinite();
     }
 
-    // 更新所有UI元素的方法
-    void UpdateUI()
+    public void UpdateHealth(int currentHealth, int maxHealth)
     {
-        Debug.Log("[PlayerStatusUI] UpdateUI method called."); // 确认事件被接收
-
-        if (PlayerDataManager.Instance == null)
+        if (playerHealthBarFill != null)
         {
-            Debug.LogWarning("[PlayerStatusUI] PlayerDataManager.Instance not found. UI update aborted.");
+            if (maxHealth <= 0) return;
+            float healthPercent = (float)currentHealth / maxHealth;
+            playerHealthBarFill.fillAmount = healthPercent;
+        }
+    }
+
+    public void UpdateBulletsInfinite()
+    {
+        if (bulletCountText != null)
+        {
+            bulletCountText.text = "子弹: ∞";
+        }
+    }
+
+    public void RegisterBossHealthBar(BaseBossController boss)
+    {
+        if (boss == null)
+        {
+            Debug.LogError("[PlayerStatusUI] RegisterBossHealthBar was called with a NULL boss.");
+            if (bossHealthBarFill != null) bossHealthBarFill.transform.parent.gameObject.SetActive(false);
             return;
         }
 
-        // 更新血条
-        if (healthBarFill != null)
+        if (subscribedBoss != null)
         {
-            // 确保maxPlayerHealth不为0，避免除零错误
-            if (PlayerDataManager.Instance.maxPlayerHealth == 0)
-            {
-                Debug.LogError("[PlayerStatusUI] maxPlayerHealth is 0! Cannot calculate health percentage.");
-                return;
-            }
-
-            float healthPercent = (float)PlayerDataManager.Instance.currentPlayerHealth / PlayerDataManager.Instance.maxPlayerHealth;
-            Debug.Log($"[PlayerStatusUI] Updating Health Bar. Current Health: {PlayerDataManager.Instance.currentPlayerHealth}, Max Health: {PlayerDataManager.Instance.maxPlayerHealth}, Calculated Fill Amount: {healthPercent}");
-
-            healthBarFill.fillAmount = healthPercent;
-        }
-        else
-        {
-            Debug.LogWarning("[PlayerStatusUI] healthBarFill reference is null, cannot update health bar.");
+            subscribedBoss.OnHealthChanged -= UpdateBossHealthUI;
         }
 
-        // 更新子弹数
-        if (bulletCountText != null)
+        subscribedBoss = boss;
+        subscribedBoss.OnHealthChanged += UpdateBossHealthUI;
+
+        if (bossHealthBarFill != null)
         {
-            bulletCountText.text = $"子弹: {PlayerDataManager.Instance.currentBulletCount}";
+            bossHealthBarFill.transform.parent.gameObject.SetActive(true);
+            Debug.Log("[PlayerStatusUI] Boss health bar activated.");
         }
+
+        Debug.Log($"[PlayerStatusUI] Successfully registered and subscribed to health updates for boss: {boss.name}");
+    }
+
+    private void UpdateBossHealthUI(float currentHealth, float maxHealth)
+    {
+        if (bossHealthBarFill == null)
+        {
+            Debug.LogError("[PlayerStatusUI] UpdateBossHealthUI called, but bossHealthBarFill is not assigned!");
+            return;
+        }
+
+        if (maxHealth <= 0)
+        {
+            Debug.LogWarning("[PlayerStatusUI] Boss maxHealth is 0. Cannot update health bar.");
+            return;
+        }
+
+        float healthPercent = currentHealth / maxHealth;
+        bossHealthBarFill.fillAmount = healthPercent;
+        Debug.Log($"[PlayerStatusUI] BOSS HEALTH UI UPDATED. Fill Amount set to: {healthPercent}");
     }
 }

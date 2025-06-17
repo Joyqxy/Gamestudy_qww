@@ -22,12 +22,10 @@ public class BoardManager : MonoBehaviour
     [Header("Game Logic")]
     public int scorePerItem = 10;
     public int targetScore = 1000;
-    [Tooltip("每消除多少个元素可以转换成1个子弹 (Defines how many items must be cleared to get 1 bullet)")]
-    public int itemsToConvertForOneBullet = 10;
+    private int currentScore = 0;
 
     [Header("UI References")]
     public Text scoreTextUI;
-    public Text bulletCountTextUI;
 
     [Header("Scene Transition")]
     public string corridorSceneName = "_SceneLong";
@@ -38,27 +36,24 @@ public class BoardManager : MonoBehaviour
     private bool isBoardBusy = false;
     private float offsetX;
     private float offsetY;
-    private int currentScore = 0;
-    private int itemsEliminatedForBulletConversion = 0;
 
     void Start()
     {
+        // Calculate offsets to center the board at (0,0) in local space
         float boardVisualWidth = (width - 1) * itemSpacing;
         float boardVisualHeight = (height - 1) * itemSpacing;
         offsetX = -boardVisualWidth / 2f;
         offsetY = -boardVisualHeight / 2f;
 
         grid = new Item[width, height];
-        StartCoroutine(InitializeBoardAndUI());
+        StartCoroutine(InitializeBoard());
     }
 
-    IEnumerator InitializeBoardAndUI()
+    IEnumerator InitializeBoard()
     {
         isBoardBusy = true;
         currentScore = 0;
-        itemsEliminatedForBulletConversion = 0;
         UpdateScoreUI();
-        UpdateBulletUI();
         yield return StartCoroutine(SetupBoard());
         isBoardBusy = false;
     }
@@ -118,8 +113,6 @@ public class BoardManager : MonoBehaviour
             }
         }
     }
-
-
 
     bool AreItemsAdjacent(Item item1, Item item2)
     {
@@ -190,12 +183,10 @@ public class BoardManager : MonoBehaviour
     void ProcessClearedItems(int count)
     {
         currentScore += count * scorePerItem;
-        itemsEliminatedForBulletConversion += count;
-
         UpdateScoreUI();
-        CheckAndConvertBullets();
 
-        if (currentScore >= targetScore)
+        // Ensure the win condition is checked only once per logical frame to avoid multiple triggers
+        if (currentScore >= targetScore && !isBoardBusy)
         {
             WinGame();
         }
@@ -241,53 +232,29 @@ public class BoardManager : MonoBehaviour
         }
     }
 
-    void CheckAndConvertBullets()
-    {
-        if (itemsToConvertForOneBullet <= 0) return;
-
-        if (itemsEliminatedForBulletConversion >= itemsToConvertForOneBullet)
-        {
-            int bulletsToAdd = itemsEliminatedForBulletConversion / itemsToConvertForOneBullet;
-
-            if (PlayerDataManager.Instance != null)
-            {
-                PlayerDataManager.Instance.AddBullets(bulletsToAdd);
-            }
-            else
-            {
-                Debug.LogError("[BoardManager] PlayerDataManager.Instance is NULL! Cannot add bullets.");
-            }
-
-            itemsEliminatedForBulletConversion %= itemsToConvertForOneBullet;
-            UpdateBulletUI();
-        }
-    }
-
     void WinGame()
     {
-        Debug.Log("Target score reached! Victory!");
-        isBoardBusy = true;
-        HandleExit();
+        Debug.Log("Target score reached! VICTORY!");
+        isBoardBusy = true; // Prevent any further actions
+
+        if (PlayerDataManager.Instance != null)
+        {
+            Debug.Log("[BoardManager] Granting upgrade and saving data due to victory.");
+            PlayerDataManager.Instance.GrantNextUpgrade(); // Grant upgrade ONLY on win
+            PlayerDataManager.Instance.SaveDataToFile();
+        }
+
+        SceneManager.LoadScene(corridorSceneName);
     }
 
     public void OnQuitButtonClicked()
     {
-        if (isBoardBusy && currentScore < targetScore)
-        {
-            Debug.Log("Board is busy, please wait to quit.");
-            return;
-        }
-        Debug.Log("Quit button clicked, returning to corridor.");
-        HandleExit();
-    }
-
-    private void HandleExit()
-    {
-        Debug.Log("[BoardManager] Performing final checks before exiting scene...");
-        CheckAndConvertBullets();
+        Debug.Log("Quit button clicked. Returning to corridor WITHOUT granting upgrade.");
+        isBoardBusy = true; // Prevent any further actions
 
         if (PlayerDataManager.Instance != null)
         {
+            // Save current state WITHOUT granting an upgrade
             PlayerDataManager.Instance.SaveDataToFile();
         }
 
@@ -364,17 +331,8 @@ public class BoardManager : MonoBehaviour
         }
     }
 
-    void UpdateBulletUI()
-    {
-        if (bulletCountTextUI != null && PlayerDataManager.Instance != null)
-        {
-            bulletCountTextUI.text = $"子弹: {PlayerDataManager.Instance.currentBulletCount}";
-        }
-        else if (bulletCountTextUI != null)
-        {
-            bulletCountTextUI.text = "子弹: N/A";
-        }
-    }
+    // This method is no longer strictly necessary for this script, but kept for potential future use or if other scripts call it.
+    void UpdateBulletUI() { }
 
     bool CausesInitialMatch(int x, int y, Item.ItemType type)
     {
@@ -383,28 +341,19 @@ public class BoardManager : MonoBehaviour
         return false;
     }
 
-	public Item.ItemType GetRandomItemType()
-	{
-		string sceneName = SceneManager.GetActiveScene().name;
-		if (sceneName == "_SceneXiao_duanwu")
-		{
-			return (Item.ItemType)Random.Range(4, 8); // 端午：4~7
-		}
-		else if (sceneName == "_SceneXiao_zhongqiu")
-		{
-			return (Item.ItemType)Random.Range(8, 12); // 中秋：8~11
-		}
-		else if (sceneName == "_SceneXiao_yuanxiao") // 新增元宵场景
-		{
-			return (Item.ItemType)Random.Range(12, 16); // 元宵：12~15（左闭右开，故上限为16）
-		}
-		else
-		{
-			return (Item.ItemType)Random.Range(0, 4); // 原场景：0~3
-		}
-	}
+    Item.ItemType GetRandomItemType()
+    {
+        string sceneName = SceneManager.GetActiveScene().name;
+        return sceneName switch
+        {
+            "_SceneXiao_duanwu" => (Item.ItemType)Random.Range(4, 8),   // duanwu1~duanwu4（枚举值 4~7）
+            "_SceneXiao_zhongqiu" => (Item.ItemType)Random.Range(8, 12),  // zhongqiu1~zhongqiu4（枚举值 8~11）
+            "_SceneXiao_yuanxiao" => (Item.ItemType)Random.Range(12, 16), // yuanxiao1~yuanxiao4（枚举值 12~15）
+            _ => (Item.ItemType)Random.Range(0, 4)    // 原场景（Lantern~Fan，枚举值 0~3）
+        };
+    }
 
-	IEnumerator CollapseColumns()
+    IEnumerator CollapseColumns()
     {
         List<Coroutine> activeFallingAnimations = new List<Coroutine>();
         for (int x = 0; x < width; x++)

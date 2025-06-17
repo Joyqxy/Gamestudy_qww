@@ -972,8 +972,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1edfe71ae76879341babe6e8e19a667d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  healthBarFill: {fileID: 295922089}
+  playerHealthBarFill: {fileID: 0}
   bulletCountText: {fileID: 257929153}
+  bossHealthBarFill: {fileID: 0}
 --- !u!1001 &1454421639917864269
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -1069,7 +1070,7 @@ PrefabInstance:
     - target: {fileID: 3511164581683590830, guid: 1478a30cd1946b8479493ca4de2c16ef, type: 3}
       propertyPath: m_Sprite
       value: 
-      objectReference: {fileID: 21300000, guid: 4ea1dd9b26e91af489eb54c44eb84f45, type: 3}
+      objectReference: {fileID: 21300000, guid: d766b12de75b81e4480a1bf1b993fec6, type: 3}
     - target: {fileID: 3511164581683590830, guid: 1478a30cd1946b8479493ca4de2c16ef, type: 3}
       propertyPath: m_WasSpriteAssigned
       value: 1

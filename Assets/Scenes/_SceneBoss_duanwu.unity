@@ -350,7 +350,7 @@ SpriteRenderer:
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
-  m_Sprite: {fileID: 21300000, guid: 8210562ea05d68b49bc7d29fb8db68e9, type: 3}
+  m_Sprite: {fileID: 21300000, guid: 39236c86ec663a34686a6eda0c44c34c, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
@@ -474,6 +474,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b28b282da78e7534eaefea01d4625200, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  maxHealth: 100
+  playerController: {fileID: 0}
+  bossController: {fileID: 0}
+  statusUI: {fileID: 0}
+  gameOverPanel: {fileID: 0}
+  restartButton: {fileID: 0}
+  returnToCorridorButton: {fileID: 0}
+  corridorSceneName: _SceneLong
 --- !u!4 &813189689
 Transform:
   m_ObjectHideFlags: 0
@@ -647,8 +655,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1edfe71ae76879341babe6e8e19a667d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  healthBarFill: {fileID: 1494254809}
+  playerHealthBarFill: {fileID: 0}
   bulletCountText: {fileID: 131033366}
+  bossHealthBarFill: {fileID: 0}
 --- !u!1 &1458962809
 GameObject:
   m_ObjectHideFlags: 0
@@ -1667,7 +1676,11 @@ PrefabInstance:
     - target: {fileID: 3511164581683590830, guid: 1478a30cd1946b8479493ca4de2c16ef, type: 3}
       propertyPath: m_Sprite
       value: 
-      objectReference: {fileID: 21300000, guid: 61e17e3d432509c4896d00b215252fc0, type: 3}
+      objectReference: {fileID: 21300000, guid: d766b12de75b81e4480a1bf1b993fec6, type: 3}
+    - target: {fileID: 3511164581683590830, guid: 1478a30cd1946b8479493ca4de2c16ef, type: 3}
+      propertyPath: m_Materials.Array.data[0]
+      value: 
+      objectReference: {fileID: 2100000, guid: 9dfc825aed78fcd4ba02077103263b40, type: 2}
     - target: {fileID: 4571069950161713333, guid: 1478a30cd1946b8479493ca4de2c16ef, type: 3}
       propertyPath: m_LocalScale.x
       value: 1.5
@@ -1765,6 +1778,25 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ee9905e180b7cfb44b3b15adc57b9263, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  maxHealth: 100
+  moveSpeed: 2
+  contactDamage: 15
+  projectilePrefab: {fileID: 0}
+  projectileSpeed: 7
+  fireRate: 1
+  attackRange: 8
+  chaseStopDistance: 2
+  minX: -10
+  maxX: 10
+  minY: -5
+  maxY: 5
+  sceneToReturnTo: _SceneLong
+  delayBeforeReturn: 2
+  specialAttackFirePoint: {fileID: 0}
+  numberOfLines: 3
+  projectilesPerLine: 5
+  totalFanAngle: 45
+  spreadWithinLine: 10
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0

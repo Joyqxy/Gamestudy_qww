@@ -78,11 +78,13 @@
     <Compile Include="Assets\TextMesh Pro\Examples &amp; Extras\Scripts\TMP_FrameRateCounter.cs" />
     <Compile Include="Assets\TextMesh Pro\Examples &amp; Extras\Scripts\Benchmark01.cs" />
     <Compile Include="Assets\TextMesh Pro\Examples &amp; Extras\Scripts\TextMeshSpawner.cs" />
-    <Compile Include="Assets\_Scripts\_SceneBoss\BossController.cs" />
     <Compile Include="Assets\TextMesh Pro\Examples &amp; Extras\Scripts\Benchmark02.cs" />
+    <Compile Include="Assets\_Scripts\_SceneBoss\BossSceneManager.cs" />
     <Compile Include="Assets\_Scripts\_SceneMain\MainMenuController.cs" />
+    <Compile Include="Assets\_Scripts\_SceneBoss\BossControllerSpr.cs" />
     <Compile Include="Assets\TextMesh Pro\Examples &amp; Extras\Scripts\CameraController.cs" />
     <Compile Include="Assets\TextMesh Pro\Examples &amp; Extras\Scripts\Benchmark03.cs" />
+    <Compile Include="Assets\_Scripts\_SceneBoss\BossControllerZho.cs" />
     <Compile Include="Assets\_Scripts\_SceneMain\TitleAnimator.cs" />
     <Compile Include="Assets\_Scripts\_SceneBoss\Projectile_BossBattle.cs" />
     <Compile Include="Assets\TextMesh Pro\Examples &amp; Extras\Scripts\TMP_ExampleScript_01.cs" />
@@ -107,7 +109,10 @@
     <Compile Include="Assets\TextMesh Pro\Examples &amp; Extras\Scripts\WarpTextExample.cs" />
     <Compile Include="Assets\TextMesh Pro\Examples &amp; Extras\Scripts\TextMeshProFloatingText.cs" />
     <Compile Include="Assets\TextMesh Pro\Examples &amp; Extras\Scripts\ShaderPropAnimator.cs" />
+    <Compile Include="Assets\_Scripts\_SceneBoss\BossControllerDuan.cs" />
+    <Compile Include="Assets\_Scripts\_SceneBoss\BaseBossController.cs" />
     <Compile Include="Assets\_Scripts\_SceneLong\CameraController_Corridor.cs" />
+    <Compile Include="Assets\_Scripts\_SceneMain\GameProgressionState.cs" />
     <Compile Include="Assets\_Scripts\_SceneBoss\PlayerStatusUI_BossBattle.cs" />
     <Compile Include="Assets\TextMesh Pro\Examples &amp; Extras\Scripts\TMP_TextInfoDebugTool.cs" />
     <Compile Include="Assets\_Scripts\_SceneXiao\BoardManager.cs" />
