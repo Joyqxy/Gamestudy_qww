@@ -3,31 +3,93 @@ using UnityEngine.UI;
 
 public class PlayerStatusUI_BossBattle : MonoBehaviour
 {
-    [Header("UI Element References")]
-    public Image healthBarFill;
+    [Header("Player UI References")]
+    public Image playerHealthBarFill;
     public Text bulletCountText;
 
-    // 不再需要订阅事件，因为由BossSceneManager直接管理
-    void OnEnable() { }
-    void OnDisable() { }
-    void Start() { }
+    [Header("Boss UI References")]
+    public Image bossHealthBarFill;
 
-    public void UpdateHealth(int currentHealth, int maxHealth)
+    private BaseBossController subscribedBoss = null;
+
+    void OnDisable()
     {
-        if (healthBarFill != null)
+        if (subscribedBoss != null)
         {
-            if (maxHealth == 0) return; // 避免除零错误
-            float healthPercent = (float)currentHealth / maxHealth;
-            healthBarFill.fillAmount = healthPercent;
+            Debug.Log($"[PlayerStatusUI] OnDisable: Unsubscribing from {subscribedBoss.name}'s health updates.");
+            subscribedBoss.OnHealthChanged -= UpdateBossHealthUI;
         }
     }
 
-    // 用于显示无限子弹
+    void Start()
+    {
+        if (bossHealthBarFill != null)
+        {
+            bossHealthBarFill.transform.parent.gameObject.SetActive(false);
+        }
+        UpdateBulletsInfinite();
+    }
+
+    public void UpdateHealth(int currentHealth, int maxHealth)
+    {
+        if (playerHealthBarFill != null)
+        {
+            if (maxHealth <= 0) return;
+            float healthPercent = (float)currentHealth / maxHealth;
+            playerHealthBarFill.fillAmount = healthPercent;
+        }
+    }
+
     public void UpdateBulletsInfinite()
     {
         if (bulletCountText != null)
         {
             bulletCountText.text = "子弹: ∞";
         }
+    }
+
+    public void RegisterBossHealthBar(BaseBossController boss)
+    {
+        if (boss == null)
+        {
+            Debug.LogError("[PlayerStatusUI] RegisterBossHealthBar was called with a NULL boss.");
+            if (bossHealthBarFill != null) bossHealthBarFill.transform.parent.gameObject.SetActive(false);
+            return;
+        }
+
+        if (subscribedBoss != null)
+        {
+            subscribedBoss.OnHealthChanged -= UpdateBossHealthUI;
+        }
+
+        subscribedBoss = boss;
+        subscribedBoss.OnHealthChanged += UpdateBossHealthUI;
+
+        if (bossHealthBarFill != null)
+        {
+            bossHealthBarFill.transform.parent.gameObject.SetActive(true);
+            Debug.Log("[PlayerStatusUI] Boss health bar activated.");
+        }
+
+        Debug.Log($"[PlayerStatusUI] Successfully registered and subscribed to health updates for boss: {boss.name}");
+    }
+
+    private void UpdateBossHealthUI(float currentHealth, float maxHealth)
+    {
+        if (bossHealthBarFill == null)
+        {
+            Debug.LogError("[PlayerStatusUI] UpdateBossHealthUI called, but bossHealthBarFill is not assigned!");
+            return;
+        }
+
+        if (maxHealth <= 0)
+        {
+            Debug.LogWarning("[PlayerStatusUI] Boss maxHealth is 0. Cannot update health bar.");
+            return;
+        }
+
+        float healthPercent = currentHealth / maxHealth;
+        bossHealthBarFill.fillAmount = healthPercent;
+        Debug.Log($"[PlayerStatusUI] BOSS HEALTH UI UPDATED. Fill Amount set to: {healthPercent}");
     }
 }
